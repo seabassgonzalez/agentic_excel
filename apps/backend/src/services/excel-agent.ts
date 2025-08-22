@@ -1,8 +1,8 @@
 import { openai } from '@ai-sdk/openai'
 import { generateObject, generateText } from 'ai'
 import { z } from 'zod'
-import * as XLSX from 'xlsx'
 import type { File } from '../db/schema'
+import { parseExcelBuffer, transformData, validateData, extractData } from '../lib/excel-utils'
 
 export class ExcelAgent {
   name: string
@@ -37,17 +37,18 @@ export class ExcelAgent {
   }
   
   private async analyze(file: File, parameters: any) {
-    const mockData = {
-      sheets: ['Sheet1'],
-      totalRows: 100,
-      totalColumns: 10,
-      dataTypes: {
-        numeric: 5,
-        text: 3,
-        date: 2,
-      },
-      summary: 'Excel file contains sales data with customer information and transaction details',
-    }
+    const buffer = Buffer.from('mock excel data')
+    const excelData = parseExcelBuffer(buffer)
+    
+    const analysisPrompt = `
+      Analyze this Excel file structure:
+      - Total sheets: ${excelData.metadata.totalSheets}
+      - Total rows: ${excelData.metadata.totalRows}
+      - Total columns: ${excelData.metadata.totalColumns}
+      - Sheet names: ${excelData.sheets.map(s => s.name).join(', ')}
+      
+      Provide insights about the data structure, potential use cases, and recommendations for processing.
+    `
     
     const { object } = await generateObject({
       model: openai('gpt-4-turbo'),
@@ -62,48 +63,86 @@ export class ExcelAgent {
         }),
         summary: z.string(),
         recommendations: z.array(z.string()),
+        insights: z.array(z.string()),
       }),
-      prompt: `Analyze this Excel file data: ${JSON.stringify(mockData)}. Provide insights and recommendations.`,
+      prompt: analysisPrompt,
     })
     
     return object
   }
   
   private async transform(file: File, parameters: any) {
-    const transformRules = parameters?.rules || []
+    const buffer = Buffer.from('mock excel data')
+    const excelData = parseExcelBuffer(buffer)
+    const transformRules = parameters?.rules || [
+      { type: 'trim', column: 0 },
+      { type: 'uppercase', column: 1 },
+    ]
+    
+    const transformedSheets = excelData.sheets.map(sheet => ({
+      ...sheet,
+      data: transformData(sheet.data, transformRules),
+    }))
     
     return {
       transformed: true,
       rulesApplied: transformRules.length,
       outputFormat: parameters?.outputFormat || 'xlsx',
       message: 'Data transformation completed successfully',
+      preview: transformedSheets[0]?.data.slice(0, 5),
     }
   }
   
   private async validate(file: File, parameters: any) {
-    const schema = parameters?.schema || {}
+    const buffer = Buffer.from('mock excel data')
+    const excelData = parseExcelBuffer(buffer)
+    const schema = parameters?.schema || {
+      columns: [
+        { required: true, type: 'string' },
+        { required: true, type: 'email' },
+        { required: false, type: 'number' },
+      ],
+    }
+    
+    const validationResults = excelData.sheets.map(sheet => ({
+      sheetName: sheet.name,
+      result: validateData(sheet.data, schema),
+    }))
+    
+    const totalErrors = validationResults.reduce((sum, r) => sum + r.result.errors.length, 0)
     
     return {
-      valid: true,
-      errors: [],
+      valid: totalErrors === 0,
+      errors: validationResults[0]?.result.errors || [],
       warnings: [],
-      totalRecords: 100,
-      validRecords: 100,
-      invalidRecords: 0,
+      totalRecords: validationResults[0]?.result.totalRows || 0,
+      validRecords: validationResults[0]?.result.validRows || 0,
+      invalidRecords: validationResults[0]?.result.invalidRows || 0,
+      sheetResults: validationResults,
     }
   }
   
   private async extract(file: File, parameters: any) {
-    const patterns = parameters?.patterns || []
+    const buffer = Buffer.from('mock excel data')
+    const excelData = parseExcelBuffer(buffer)
+    const patterns = parameters?.patterns || [
+      { name: 'Email addresses', type: 'regex', regex: '[\w.-]+@[\w.-]+\.\w+' },
+      { name: 'Phone numbers', type: 'regex', regex: '\\d{3}-\\d{3}-\\d{4}' },
+      { name: 'URLs', type: 'regex', regex: 'https?://[\\w.-]+' },
+    ]
+    
+    const extractResults = excelData.sheets.map(sheet => ({
+      sheetName: sheet.name,
+      results: extractData(sheet.data, patterns),
+    }))
     
     return {
       extracted: true,
-      matches: patterns.length * 10,
-      data: patterns.map((pattern: string) => ({
-        pattern,
-        matches: 10,
-        samples: ['Sample 1', 'Sample 2', 'Sample 3'],
-      })),
+      totalMatches: extractResults.reduce((sum, r) => 
+        sum + r.results.reduce((s, res) => s + res.matchCount, 0), 0
+      ),
+      sheetResults: extractResults,
+      summary: extractResults[0]?.results || [],
     }
   }
 }
