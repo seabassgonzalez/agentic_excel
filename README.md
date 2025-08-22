@@ -31,6 +31,91 @@ AI-powered Excel processing platform built with TypeScript, featuring intelligen
 - **Real-time Processing**: Track job progress with live updates
 - **Agent Logs**: Detailed logging of agent actions
 
+ This system essentially turns Excel files into intelligent, queryable data sources that can be automatically analyzed, cleaned, validated, and mined for specific information using AI assistance. 
+  
+  This project enables four main types of AI-powered operations on Excel worksheets:
+
+  1. Analyze Operation
+
+  The AI agent analyzes the Excel file structure and content, providing:
+  - Sheet inventory: List of all sheets in the workbook
+  - Data dimensions: Total rows and columns
+  - Data type detection: Counts of numeric, text, and date columns
+  - AI-generated summary: Natural language description of what the data contains
+  - Recommendations: AI-suggested next steps for processing the data
+  - Insights: Patterns and observations about the data structure
+
+  2. Transform Operation
+
+  Applies data transformation rules to modify the Excel data:
+  - Text transformations:
+    - Convert to uppercase
+    - Convert to lowercase
+    - Trim whitespace
+    - Find and replace text
+  - Column-specific operations: Apply transformations to specific columns
+  - Batch processing: Apply multiple transformation rules in sequence
+  - Preview generation: Shows sample of transformed data
+
+  3. Validate Operation
+
+  Validates Excel data against defined schemas:
+  - Required field checking: Ensures mandatory columns have values
+  - Data type validation:
+    - Number validation
+    - Email format validation
+    - String validation
+    - Date validation (schema supports it)
+  - Pattern matching: Validate against regex patterns
+  - Error reporting: Detailed list of validation errors with row/column locations
+  - Statistics: Total records, valid records, invalid records count
+
+  4. Extract Operation
+
+  Extracts specific data patterns from Excel files:
+  - Pattern-based extraction:
+    - Email addresses (using regex)
+    - Phone numbers (using regex)
+    - URLs (using regex)
+    - Custom regex patterns
+  - Text search: Find cells containing specific text (case-insensitive)
+  - Match reporting: Shows where patterns were found (row/column)
+  - Sample results: Provides examples of extracted data
+  - Match counting: Total number of matches per pattern
+
+  Additional Capabilities
+
+  File Processing Features:
+
+  - Multi-sheet support: Processes all sheets in a workbook
+  - Large file handling: Can process files with thousands of rows
+  - Real-time progress tracking: Monitor processing status
+  - Detailed logging: Every agent action is logged for transparency
+
+  AI-Powered Intelligence:
+
+  - Uses OpenAI GPT-4 for intelligent analysis
+  - Generates natural language summaries
+  - Provides actionable recommendations
+  - Understands context and data relationships
+
+  Output Options:
+
+  - JSON-formatted results
+  - Structured data ready for further processing
+  - Preview of processed data
+  - Detailed error and validation reports
+
+  Limitations (based on current implementation):
+
+  - No direct Excel file generation (only analysis/processing)
+  - No complex formula evaluation
+  - No chart/visualization generation
+  - No pivot table operations
+  - Mock data is currently used (actual file processing not fully implemented)
+
+ 
+
 ## Getting Started
 
 ### Prerequisites
